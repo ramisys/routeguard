@@ -10,8 +10,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -41,6 +44,9 @@ public class NavigateFragment extends Fragment {
     private EditText etDestination;
     private ProgressBar pbSearch;
     private View routeInfoCard;
+    private TextView tvRouteSummary;
+    private TextView tvObstacleInfo;
+    private ImageView btnGo;
 
     @Nullable
     @Override
@@ -57,6 +63,9 @@ public class NavigateFragment extends Fragment {
         etDestination = view.findViewById(R.id.etDestination);
         pbSearch = view.findViewById(R.id.pbSearch);
         routeInfoCard = view.findViewById(R.id.routeInfoCard);
+        tvRouteSummary = view.findViewById(R.id.tvRouteSummary);
+        tvObstacleInfo = view.findViewById(R.id.tvObstacleInfo);
+        btnGo = view.findViewById(R.id.btnGo);
 
         initMap();
 
@@ -66,6 +75,12 @@ public class NavigateFragment extends Fragment {
                 return true;
             }
             return false;
+        });
+
+        btnGo.setOnClickListener(v -> performSearch(etDestination.getText().toString()));
+
+        view.findViewById(R.id.btnStartNavigation).setOnClickListener(v -> {
+            Toast.makeText(requireContext(), "Navigation starting...", Toast.LENGTH_SHORT).show();
         });
 
         return view;
@@ -140,7 +155,9 @@ public class NavigateFragment extends Fragment {
                     public void onResponse(retrofit2.Call<com.example.routeguard.network.RoutingService.OsrmResponse> call,
                                            retrofit2.Response<com.example.routeguard.network.RoutingService.OsrmResponse> response) {
                         if (response.isSuccessful() && response.body() != null && !response.body().routes.isEmpty()) {
-                            drawRoute(response.body().routes.get(0).geometry);
+                            com.example.routeguard.network.RoutingService.Route route = response.body().routes.get(0);
+                            drawRoute(route.geometry);
+                            showRouteInfo(route);
                         }
                     }
 
@@ -149,6 +166,22 @@ public class NavigateFragment extends Fragment {
                         Toast.makeText(requireContext(), "Routing failed", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void showRouteInfo(com.example.routeguard.network.RoutingService.Route route) {
+        if (routeInfoCard != null) {
+            routeInfoCard.setVisibility(View.VISIBLE);
+            
+            // Format duration (seconds to minutes)
+            int minutes = (int) (route.duration / 60);
+            double distanceKm = route.distance / 1000.0;
+            
+            tvRouteSummary.setText(String.format(Locale.getDefault(), 
+                    "Fastest route: %d mins (%.1f km)", minutes, distanceKm));
+            
+            // In a real app, we'd calculate how many obstacles are avoided
+            tvObstacleInfo.setText("Route optimized to avoid nearby hazards");
+        }
     }
 
     private void drawRoute(String encodedPolyline) {

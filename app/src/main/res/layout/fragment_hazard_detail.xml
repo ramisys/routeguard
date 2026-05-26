@@ -187,14 +187,31 @@
                     android:layout_marginBottom="20dp" />
 
                 <!-- Community verification -->
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="COMMUNITY VERIFICATION"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:letterSpacing="0.1"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="COMMUNITY VERIFICATION"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:id="@+id/tvVerificationCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 confirmations"
+                        android:textColor="@color/accent_teal"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -228,9 +245,10 @@
 
                 <!-- Comments -->
                 <TextView
+                    android:id="@+id/tvCommentsLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="COMMENTS (2)"
+                    android:text="COMMENTS (0)"
                     android:textColor="@color/text_secondary"
                     android:textSize="11sp"
                     android:letterSpacing="0.1"
@@ -248,6 +266,8 @@
                         android:layout_height="44dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
+                        android:hint="Add a comment..."
+                        android:textColorHint="@color/text_secondary"
                         android:background="@drawable/bg_input_rounded"
                         android:textColor="@color/text_primary"
                         android:paddingStart="12dp"
@@ -264,95 +284,23 @@
                 </LinearLayout>
 
                 <!-- Comment items -->
-                <androidx.cardview.widget.CardView
+                <TextView
+                    android:id="@+id/tvNoComments"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    app:cardBackgroundColor="@color/bg_card"
-                    app:cardCornerRadius="12dp">
+                    android:text="No comments yet. Be the first to update the community!"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:visibility="gone" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginBottom="4dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Driver102"
-                                android:textColor="@color/text_primary"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="2 mins ago"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Just passed by, it's getting worse. Avoid the right lane entirely."
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-                <androidx.cardview.widget.CardView
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvComments"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    app:cardBackgroundColor="@color/bg_card"
-                    app:cardCornerRadius="12dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginBottom="4dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="CommuterX"
-                                android:textColor="@color/text_primary"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="8 mins ago"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Thanks for the heads up!"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
             </LinearLayout>
         </LinearLayout>

@@ -34,4 +34,13 @@ public interface ApiService {
 
     @GET("api/users/profile")
     Call<com.example.routeguard.data.model.User> getUserProfile();
+
+    @retrofit2.http.PATCH("api/users/profile")
+    Call<com.example.routeguard.data.model.User> updateUserProfile(@Body com.example.routeguard.data.model.User user);
+
+    @GET("api/obstacles/{id}/comments")
+    Call<List<com.example.routeguard.data.model.Comment>> getComments(@Path("id") String obstacleId);
+
+    @POST("api/obstacles/{id}/comments")
+    Call<com.example.routeguard.data.model.Comment> postComment(@Path("id") String obstacleId, @Body com.example.routeguard.data.model.Comment comment);
 }

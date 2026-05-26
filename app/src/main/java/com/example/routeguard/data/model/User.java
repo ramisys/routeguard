@@ -11,6 +11,9 @@ public class User {
     
     @SerializedName("displayName")
     private String displayName;
+
+    @SerializedName("username")
+    private String username;
     
     @SerializedName("reputationPoints")
     private int reputationPoints;
@@ -26,6 +29,9 @@ public class User {
 
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
     public int getReputationPoints() { return reputationPoints; }
     public void setReputationPoints(int reputationPoints) { this.reputationPoints = reputationPoints; }
