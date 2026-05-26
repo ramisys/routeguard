@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
 
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.data.model.ErrorLog;
@@ -14,6 +15,7 @@ import com.example.routeguard.data.model.ErrorLog;
         version = 3,
         exportSchema = false
 )
+@TypeConverters({Converters.class})
 public abstract class RouteGuardDatabase extends RoomDatabase {
 
     private static volatile RouteGuardDatabase instance;

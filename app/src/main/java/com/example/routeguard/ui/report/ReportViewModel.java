@@ -9,6 +9,8 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.data.repository.ObstacleRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
@@ -111,17 +113,29 @@ public class ReportViewModel extends AndroidViewModel {
 
     private void finalizeSubmission(String imageUrl) {
         Obstacle report = new Obstacle();
-        report.setId(String.valueOf(System.currentTimeMillis()));
+        report.setId(UUID.randomUUID().toString());
         report.setType(selectedType.getValue());
         report.setSeverity(selectedSeverity.getValue() != null ? selectedSeverity.getValue() : "MODERATE");
-        report.setLat(latitude.getValue() != null ? latitude.getValue() : 11.2543);
-        report.setLon(longitude.getValue() != null ? longitude.getValue() : 124.9999);
+        report.setDescription(description.getValue());
+        
+        // Add reporter info
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            report.setReporterId(user.getUid());
+            String name = user.getDisplayName();
+            report.setReporterName((name != null && !name.isEmpty()) ? name : user.getEmail());
+        }
+        
+        double lat = latitude.getValue() != null ? latitude.getValue() : 11.2543;
+        double lng = longitude.getValue() != null ? longitude.getValue() : 124.9999;
+        report.setLocation(new Obstacle.LocationData(lng, lat));
+
         report.setImageUrl(imageUrl);
         report.setActive(true);
-        report.setReportedAt(System.currentTimeMillis());
-        report.setExpiresAt(System.currentTimeMillis() + (4 * 60 * 60 * 1000));
+        report.setReportedAtMillis(System.currentTimeMillis());
+        report.setExpiresAtMillis(System.currentTimeMillis() + (4 * 60 * 60 * 1000L));
 
-        // Save locally
+        // Save locally first
         repository.insert(report);
 
         // Send to backend
@@ -132,13 +146,23 @@ public class ReportViewModel extends AndroidViewModel {
                     @Override
                     public void onResponse(@NonNull retrofit2.Call<Obstacle> call, @NonNull retrofit2.Response<Obstacle> response) {
                         isSubmitting.setValue(false);
-                        submitSuccess.setValue(true);
+                        // If it's 201 Created or 200 OK, we are successful
+                        if (response.isSuccessful()) {
+                            submitSuccess.setValue(true);
+                        } else {
+                            // If backend is saved but response is error, we still treat as success 
+                            // because it's in the local DB and the user shouldn't be stuck.
+                            android.util.Log.e("ReportViewModel", "Backend error: " + response.code());
+                            submitSuccess.setValue(true); 
+                        }
                     }
 
                     @Override
                     public void onFailure(@NonNull retrofit2.Call<Obstacle> call, @NonNull Throwable t) {
                         isSubmitting.setValue(false);
-                        submitSuccess.setValue(true); // Still success because saved locally
+                        android.util.Log.e("ReportViewModel", "Network failure: " + t.getMessage());
+                        // Even if network fails, it's saved in local DB, so let user proceed
+                        submitSuccess.setValue(true);
                     }
                 });
     }

@@ -26,10 +26,9 @@ public class MapViewModel extends AndroidViewModel {
         super(application);
         repository = new ObstacleRepository(application);
 
-        // switchMap ensures the DB query is updated whenever currentLocation changes
-        // Increased radius to 0.2 (~22km) for better visibility
-        nearbyObstacles = Transformations.switchMap(currentLocation, loc -> 
-                repository.getNearbyObstacles(loc[0], loc[1], 0.2));
+        // Different Approach: Observe ALL active obstacles in the database.
+        // This eliminates coordinate-range query errors.
+        nearbyObstacles = repository.getAllActiveObstacles();
     }
 
     public LiveData<List<Obstacle>> getNearbyObstacles() {
@@ -48,7 +47,10 @@ public class MapViewModel extends AndroidViewModel {
         isLoading.setValue(true);
         double[] loc = currentLocation.getValue();
         if (loc != null) {
+            android.util.Log.d("MapViewModel", "Refreshing obstacles at: " + loc[0] + ", " + loc[1]);
             repository.fetchAndCacheObstacles(loc[0], loc[1]);
+        } else {
+            android.util.Log.w("MapViewModel", "Cannot refresh obstacles: currentLocation is null");
         }
         isLoading.setValue(false);
     }

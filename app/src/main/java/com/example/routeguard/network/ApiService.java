@@ -20,7 +20,7 @@ public interface ApiService {
             @Query("radius") int radiusMeters
     );
 
-    @POST("api/reports")
+    @POST("api/obstacles")
     Call<Obstacle> submitReport(@Body Obstacle report);
 
     @POST("api/users/fcm-token")

@@ -41,7 +41,33 @@ public class HazardDetailFragment extends Fragment {
 
         if (obstacle != null) {
             ((TextView) view.findViewById(R.id.tvHazardTitle)).setText(obstacle.getType());
-            ((TextView) view.findViewById(R.id.tvDescription)).setText("Reported at " + obstacle.getLat() + ", " + obstacle.getLon());
+            
+            String badgeText = obstacle.getType();
+            if (obstacle.getSeverity() != null) {
+                badgeText += " • " + obstacle.getSeverity();
+            }
+            ((TextView) view.findViewById(R.id.tvTypeBadge)).setText(badgeText);
+
+            ((TextView) view.findViewById(R.id.tvLocation)).setText(
+                    String.format(java.util.Locale.getDefault(), "Lat: %.4f, Lon: %.4f", obstacle.getLat(), obstacle.getLon()));
+            
+            String reportedTime = android.text.format.DateUtils.getRelativeTimeSpanString(
+                    obstacle.getReportedAtMillis(),
+                    System.currentTimeMillis(), 
+                    android.text.format.DateUtils.MINUTE_IN_MILLIS).toString();
+            ((TextView) view.findViewById(R.id.tvReportedTime)).setText("Reported " + reportedTime);
+
+            String desc = obstacle.getDescription();
+            if (desc == null || desc.isEmpty()) {
+                desc = "No description provided for this " + obstacle.getType().toLowerCase() + ".";
+            }
+            ((TextView) view.findViewById(R.id.tvDescription)).setText(desc);
+
+            // Update reporter info
+            if (obstacle.getReporterName() != null) {
+                ((TextView) view.findViewById(R.id.tvReporterName)).setText(obstacle.getReporterName());
+                ((TextView) view.findViewById(R.id.tvReporterStats)).setText("Verified Community Member");
+            }
             
             ImageView ivPhoto = view.findViewById(R.id.ivHazardPhoto);
             if (obstacle.getImageUrl() != null && !obstacle.getImageUrl().isEmpty()) {

@@ -38,23 +38,28 @@ public class RetrofitClient {
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         if (user != null) {
                             try {
-                                GetTokenResult tokenResult = Tasks.await(user.getIdToken(false));
+                                // IMPORTANT for testing: Tasks.await blocks the thread.
+                                // We use a shorter timeout for the token fetch to prevent app hang.
+                                GetTokenResult tokenResult = Tasks.await(user.getIdToken(false), 5, TimeUnit.SECONDS);
                                 String token = tokenResult.getToken();
                                 if (token != null) {
                                     Request authenticated = original.newBuilder()
                                             .header("Authorization", "Bearer " + token)
+                                            .header("Accept", "application/json")
                                             .build();
                                     return chain.proceed(authenticated);
                                 }
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                android.util.Log.e("RetrofitClient", "Auth token fetch failed: " + e.getMessage());
+                                // Proceed without token if fetch fails, so server can decide (useful for local test)
                             }
                         }
                     }
                     return chain.proceed(original);
                 })
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
