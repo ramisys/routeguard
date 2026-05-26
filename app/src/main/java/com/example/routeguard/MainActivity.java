@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import android.content.Intent;
 import com.example.routeguard.service.ProximityAlertService;
 import android.os.Build;
+import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,10 +52,6 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new ReportFragment();
             } else if (itemId == R.id.nav_navigate) {
                 selectedFragment = new NavigateFragment();
-            } else if (itemId == R.id.nav_profile) {
-                selectedFragment = new ProfileFragment();
-            } else if (itemId == R.id.nav_settings) {
-                selectedFragment = new SettingsFragment();
             }
 
             if (selectedFragment != null) {
@@ -62,6 +59,14 @@ public class MainActivity extends AppCompatActivity {
                         .beginTransaction()
                         .replace(R.id.fragmentContainer, selectedFragment)
                         .commit();
+                
+                // Hide bottom nav if it's the report fragment
+                if (itemId == R.id.nav_report) {
+                    bottomNavigationView.setVisibility(View.GONE);
+                } else {
+                    bottomNavigationView.setVisibility(View.VISIBLE);
+                }
+
                 return true;
             }
             return false;

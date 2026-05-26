@@ -59,6 +59,9 @@ public class NavigateFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_navigate, container, false);
 
+        View mainBottomNav = requireActivity().findViewById(R.id.bottomNavigation);
+        if (mainBottomNav != null) mainBottomNav.setVisibility(View.VISIBLE);
+
         mapView = view.findViewById(R.id.mapViewNav);
         etDestination = view.findViewById(R.id.etDestination);
         pbSearch = view.findViewById(R.id.pbSearch);

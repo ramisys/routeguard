@@ -11,10 +11,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.appcompat.widget.PopupMenu;
 
 import com.example.routeguard.R;
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.ui.report.ReportFragment;
+import com.example.routeguard.ui.profile.ProfileFragment;
+import com.example.routeguard.ui.settings.SettingsFragment;
+// HazardDetailFragment is in the same package, no import needed
 
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
@@ -53,6 +57,11 @@ public class MapFragment extends Fragment {
         // Initialize overlays
         hazardOverlay = new org.osmdroid.views.overlay.FolderOverlay();
         
+        View mainBottomNav = requireActivity().findViewById(R.id.bottomNavigation);
+        if (mainBottomNav != null) mainBottomNav.setVisibility(View.VISIBLE);
+        
+        view.findViewById(R.id.ivProfile).setOnClickListener(this::showProfileMenu);
+
         initMap();
         initViewModel();
 
@@ -110,6 +119,33 @@ public class MapFragment extends Fragment {
 
         // Load fresh data from network
         viewModel.refreshObstacles();
+    }
+
+    private void showProfileMenu(View v) {
+        View popupView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_profile_dropdown, null);
+        android.widget.PopupWindow popupWindow = new android.widget.PopupWindow(popupView, 
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+
+        popupView.findViewById(R.id.menu_profile).setOnClickListener(view -> {
+            popupWindow.dismiss();
+            navigateTo(new ProfileFragment());
+        });
+
+        popupView.findViewById(R.id.menu_settings).setOnClickListener(view -> {
+            popupWindow.dismiss();
+            navigateTo(new SettingsFragment());
+        });
+
+        popupWindow.setElevation(10);
+        popupWindow.showAsDropDown(v, 0, 10);
+    }
+
+    private void navigateTo(Fragment fragment) {
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
 
