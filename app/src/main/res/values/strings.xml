@@ -1,0 +1,86 @@
+<resources>
+    <string name="app_name">RouteGuard</string>
+
+    <!-- Navigation -->
+    <string name="nav_map">Map</string>
+    <string name="nav_report">Report</string>
+    <string name="nav_navigate">Navigate</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Map Screen -->
+    <string name="search_hint">Search destination...</string>
+
+    <!-- Report Screens -->
+    <string name="report_hazard">Report Hazard</string>
+    <string name="step_1_of_3">Step 1 of 3</string>
+    <string name="step_2_of_3">Step 2 of 3</string>
+    <string name="step_3_of_3">Step 3 of 3</string>
+    <string name="hazard_type_prompt">What type of hazard?</string>
+    <string name="hazard_type_desc">Select the category that best describes the obstacle</string>
+    <string name="flood">Flood</string>
+    <string name="construction">Construction</string>
+    <string name="accident">Accident</string>
+    <string name="debris">Debris</string>
+    <string name="others">Others</string>
+    <string name="btn_continue">Continue →</string>
+    <string name="btn_back">Back</string>
+
+    <string name="add_media">Add Photo or Video</string>
+    <string name="required_for_verification">Required for verification</string>
+    <string name="take_photo">Take Photo/Video</string>
+    <string name="use_camera">Use your camera</string>
+    <string name="upload_gallery">Upload from Gallery</string>
+    <string name="choose_existing">Choose existing file</string>
+    <string name="media_uploaded_success">✓ Media uploaded successfully</string>
+
+    <string name="add_details">Add Details</string>
+    <string name="details_help">Help others understand the situation</string>
+    <string name="report_submitted">Report Submitted!</string>
+    <string name="verification_pending">Your report is being verified by our moderation team</string>
+    <string name="safety_points_gain">+10 Safety Points</string>
+    <string name="redirecting_to_map">Redirecting to map...</string>
+
+    <!-- Profile Screen -->
+    <string name="verified">Verified</string>
+    <string name="safety_guardian_since">Safety Guardian since 2025</string>
+    <string name="safety_points">Safety Points</string>
+    <string name="reports_count">Reports</string>
+    <string name="helped_count">Helped</string>
+    <string name="reputation_level">Reputation Level</string>
+    <string name="level_status">Level 8</string>
+    <string name="pts_to_next_level">3,000 pts to Level 9</string>
+    <string name="recent_activity">Recent Activity</string>
+
+    <!-- Settings Screen -->
+    <string name="notifications">Notifications</string>
+    <string name="hazard_alerts">Hazard Alerts</string>
+    <string name="community_updates">Community Updates</string>
+    <string name="account">Account</string>
+    <string name="change_password">Change Password</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="sign_out">Sign Out</string>
+
+    <!-- Navigate Screen -->
+    <string name="recent_destinations">Recent Destinations</string>
+    <string name="home">Home</string>
+    <string name="work">Work</string>
+    <string name="where_to">Where to?</string>
+
+    <!-- Login/Register -->
+    <string name="welcome_back">Welcome Back</string>
+    <string name="login_desc">Sign in to RouteGuard to access smart routing and hazard alerts.</string>
+    <string name="email_address">Email Address</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in">Sign In →</string>
+    <string name="no_account">Don\'t have an account? </string>
+    <string name="create_account">Create an account</string>
+    <string name="join_routeguard">Join RouteGuard</string>
+    <string name="register_desc">Create an account to report hazards and navigate smarter.</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="sign_up">Sign Up →</string>
+    <string name="already_have_account">Already have an account? </string>
+</resources>
