@@ -26,7 +26,13 @@ public class Obstacle {
     private double lon;
 
     @SerializedName("reportedAt")
-    private String reportedAt;
+    private long reportedAt;
+
+    @SerializedName("expiresAt")
+    private long expiresAt;
+
+    @SerializedName("imageUrl")
+    private String imageUrl;
 
     @SerializedName("isActive")
     private boolean isActive;
@@ -50,8 +56,14 @@ public class Obstacle {
     public double getLon() { return lon; }
     public void setLon(double lon) { this.lon = lon; }
 
-    public String getReportedAt() { return reportedAt; }
-    public void setReportedAt(String reportedAt) { this.reportedAt = reportedAt; }
+    public long getReportedAt() { return reportedAt; }
+    public void setReportedAt(long reportedAt) { this.reportedAt = reportedAt; }
+
+    public long getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(long expiresAt) { this.expiresAt = expiresAt; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }

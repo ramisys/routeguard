@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.data.repository.ObstacleRepository;
@@ -15,63 +16,40 @@ import java.util.List;
 public class MapViewModel extends AndroidViewModel {
 
     private final ObstacleRepository repository;
-
-    // LiveData the UI observes
     private final LiveData<List<Obstacle>> nearbyObstacles;
+    private final MutableLiveData<double[]> currentLocation = new MutableLiveData<>(new double[]{11.2543, 124.9999});
 
-    // Current user location (updated by GPS)
-    private final MutableLiveData<double[]> userLocation =
-            new MutableLiveData<>();
-
-    // Loading state for showing/hiding progress
-    private final MutableLiveData<Boolean> isLoading =
-            new MutableLiveData<>(false);
-
-    // Error messages
-    private final MutableLiveData<String> errorMessage =
-            new MutableLiveData<>();
-
-    // Default to Tacloban area
-    private double currentLat = 11.2543;
-    private double currentLon = 124.9999;
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
     public MapViewModel(@NonNull Application application) {
         super(application);
         repository = new ObstacleRepository(application);
 
-        // 0.05 degrees ≈ 5km radius
-        nearbyObstacles = repository.getNearbyObstacles(
-                currentLat, currentLon, 0.05);
+        // switchMap ensures the DB query is updated whenever currentLocation changes
+        // Increased radius to 0.2 (~22km) for better visibility
+        nearbyObstacles = Transformations.switchMap(currentLocation, loc -> 
+                repository.getNearbyObstacles(loc[0], loc[1], 0.2));
     }
 
     public LiveData<List<Obstacle>> getNearbyObstacles() {
         return nearbyObstacles;
     }
 
-    public LiveData<double[]> getUserLocation() {
-        return userLocation;
-    }
+    public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<String> getErrorMessage() { return errorMessage; }
 
-    public LiveData<Boolean> getIsLoading() {
-        return isLoading;
-    }
-
-    public LiveData<String> getErrorMessage() {
-        return errorMessage;
-    }
-
-    // Called when GPS updates user position
     public void updateUserLocation(double lat, double lon) {
-        currentLat = lat;
-        currentLon = lon;
-        userLocation.setValue(new double[]{lat, lon});
+        currentLocation.setValue(new double[]{lat, lon});
         refreshObstacles();
     }
 
-    // Fetch fresh data from network → caches in Room
     public void refreshObstacles() {
         isLoading.setValue(true);
-        repository.fetchAndCacheObstacles(currentLat, currentLon);
+        double[] loc = currentLocation.getValue();
+        if (loc != null) {
+            repository.fetchAndCacheObstacles(loc[0], loc[1]);
+        }
         isLoading.setValue(false);
     }
 

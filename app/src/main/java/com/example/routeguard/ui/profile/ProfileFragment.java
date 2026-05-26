@@ -26,6 +26,7 @@ public class ProfileFragment extends Fragment {
         if (user != null) {
             TextView tvName = view.findViewById(R.id.tvProfileName);
             TextView tvInitials = view.findViewById(R.id.tvProfileInitials);
+            TextView tvPoints = view.findViewById(R.id.tvSafetyPoints);
             
             String name = user.getDisplayName();
             if (name == null || name.isEmpty()) {
@@ -36,6 +37,25 @@ public class ProfileFragment extends Fragment {
             if (name != null && !name.isEmpty()) {
                 tvInitials.setText(name.substring(0, Math.min(2, name.length())).toUpperCase());
             }
+
+            // Fetch extra info from our backend
+            com.example.routeguard.network.RetrofitClient.getInstance()
+                    .getApiService()
+                    .getUserProfile()
+                    .enqueue(new retrofit2.Callback<com.example.routeguard.data.model.User>() {
+                        @Override
+                        public void onResponse(retrofit2.Call<com.example.routeguard.data.model.User> call,
+                                               retrofit2.Response<com.example.routeguard.data.model.User> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                tvPoints.setText(String.valueOf(response.body().getReputationPoints()));
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(retrofit2.Call<com.example.routeguard.data.model.User> call, Throwable t) {
+                            // Fallback
+                        }
+                    });
         }
 
         return view;

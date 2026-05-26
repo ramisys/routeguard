@@ -28,4 +28,10 @@ public interface ApiService {
 
     @POST("api/obstacles/{id}/confirm")
     Call<Void> confirmObstacle(@Path("id") String obstacleId);
+
+    @POST("api/obstacles/{id}/clear")
+    Call<Void> clearObstacle(@Path("id") String obstacleId);
+
+    @GET("api/users/profile")
+    Call<com.example.routeguard.data.model.User> getUserProfile();
 }

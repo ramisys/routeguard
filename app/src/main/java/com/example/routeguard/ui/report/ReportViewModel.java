@@ -9,6 +9,12 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.data.repository.ObstacleRepository;
+import com.cloudinary.android.MediaManager;
+import com.cloudinary.android.callback.ErrorInfo;
+import com.cloudinary.android.callback.UploadCallback;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class ReportViewModel extends AndroidViewModel {
 
@@ -58,8 +64,6 @@ public class ReportViewModel extends AndroidViewModel {
 
     public void submitReport() {
         String type = selectedType.getValue();
-        String desc = description.getValue();
-
         if (type == null || type.isEmpty()) {
             errorMessage.setValue("Please select a hazard type");
             return;
@@ -67,40 +71,74 @@ public class ReportViewModel extends AndroidViewModel {
 
         isSubmitting.setValue(true);
 
+        if (mediaUri.getValue() != null) {
+            uploadImageAndSubmit(mediaUri.getValue());
+        } else {
+            finalizeSubmission(null);
+        }
+    }
+
+    private void uploadImageAndSubmit(Uri uri) {
+        // Use Cloudinary for Image Upload
+        MediaManager.get().upload(uri)
+                .option("folder", "obstacles")
+                .option("unsigned", true)
+                .option("upload_preset", "mzmd1way") // Update with your actual Unsigned Preset Name
+                .callback(new UploadCallback() {
+                    @Override
+                    public void onStart(String requestId) { }
+
+                    @Override
+                    public void onProgress(String requestId, long bytes, long totalBytes) { }
+
+                    @Override
+                    public void onSuccess(String requestId, Map resultData) {
+                        String imageUrl = (String) resultData.get("secure_url");
+                        finalizeSubmission(imageUrl);
+                    }
+
+                    @Override
+                    public void onError(String requestId, ErrorInfo error) {
+                        isSubmitting.setValue(false);
+                        errorMessage.setValue("Cloudinary upload failed: " + error.getDescription());
+                    }
+
+                    @Override
+                    public void onReschedule(String requestId, ErrorInfo error) { }
+                })
+                .dispatch();
+    }
+
+    private void finalizeSubmission(String imageUrl) {
         Obstacle report = new Obstacle();
         report.setId(String.valueOf(System.currentTimeMillis()));
-        report.setType(type);
-        report.setSeverity(selectedSeverity.getValue() != null
-                ? selectedSeverity.getValue() : "MODERATE");
-        report.setLat(latitude.getValue() != null
-                ? latitude.getValue() : 11.2543);
-        report.setLon(longitude.getValue() != null
-                ? longitude.getValue() : 124.9999);
+        report.setType(selectedType.getValue());
+        report.setSeverity(selectedSeverity.getValue() != null ? selectedSeverity.getValue() : "MODERATE");
+        report.setLat(latitude.getValue() != null ? latitude.getValue() : 11.2543);
+        report.setLon(longitude.getValue() != null ? longitude.getValue() : 124.9999);
+        report.setImageUrl(imageUrl);
         report.setActive(true);
+        report.setReportedAt(System.currentTimeMillis());
+        report.setExpiresAt(System.currentTimeMillis() + (4 * 60 * 60 * 1000));
 
-        // Save locally immediately so map updates right away
+        // Save locally
         repository.insert(report);
 
-        // Also send to backend
+        // Send to backend
         com.example.routeguard.network.RetrofitClient.getInstance()
                 .getApiService()
                 .submitReport(report)
                 .enqueue(new retrofit2.Callback<Obstacle>() {
                     @Override
-                    public void onResponse(
-                            @NonNull retrofit2.Call<Obstacle> call,
-                            @NonNull retrofit2.Response<Obstacle> response) {
+                    public void onResponse(@NonNull retrofit2.Call<Obstacle> call, @NonNull retrofit2.Response<Obstacle> response) {
                         isSubmitting.setValue(false);
                         submitSuccess.setValue(true);
                     }
 
                     @Override
-                    public void onFailure(
-                            @NonNull retrofit2.Call<Obstacle> call,
-                            @NonNull Throwable t) {
-                        // Still mark success — saved locally
+                    public void onFailure(@NonNull retrofit2.Call<Obstacle> call, @NonNull Throwable t) {
                         isSubmitting.setValue(false);
-                        submitSuccess.setValue(true);
+                        submitSuccess.setValue(true); // Still success because saved locally
                     }
                 });
     }

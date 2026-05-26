@@ -24,7 +24,10 @@ import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MapFragment extends Fragment {
 
@@ -106,9 +109,16 @@ public class MapFragment extends Fragment {
         marker.setPosition(new GeoPoint(obstacle.getLat(), obstacle.getLon()));
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         marker.setTitle(obstacle.getType());
-        marker.setSnippet(obstacle.getReportedAt());
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        marker.setSnippet("Reported at " + sdf.format(new Date(obstacle.getReportedAt())));
+
         marker.setOnMarkerClickListener((m, map) -> {
-            m.showInfoWindow();
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, HazardDetailFragment.newInstance(obstacle))
+                    .addToBackStack(null)
+                    .commit();
             return true;
         });
         mapView.getOverlays().add(marker);

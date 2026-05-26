@@ -118,7 +118,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/sign_out"
                 android:textColor="@color/danger_red"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                android:paddingBottom="16dp" />
+
+            <TextView
+                android:id="@+id/btnViewLogs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Error Logs"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

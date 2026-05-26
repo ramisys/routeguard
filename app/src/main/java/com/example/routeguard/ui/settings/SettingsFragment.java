@@ -29,6 +29,14 @@ public class SettingsFragment extends Fragment {
             startActivity(intent);
         });
 
+        view.findViewById(R.id.btnViewLogs).setOnClickListener(v -> {
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, new ErrorLogFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         return view;
     }
 }

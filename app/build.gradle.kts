@@ -8,13 +8,19 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.routeguard"
+        applicationId = "com.routeguard.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -78,4 +84,10 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment:2.8.5")
     implementation("androidx.navigation:navigation-ui:2.8.5")
     implementation(libs.play.services.location)
+
+    // WorkManager
+    implementation("androidx.work:work-runtime:2.9.0")
+
+    // Cloudinary
+    implementation("com.cloudinary:cloudinary-android:3.0.2")
 }

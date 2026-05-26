@@ -60,7 +60,8 @@ public class ObstacleRepository {
                         if (response.isSuccessful() && response.body() != null) {
                             // Save to local DB on background thread
                             executor.execute(() -> {
-                                obstacleDao.deleteAll();
+                                // REMOVED: obstacleDao.deleteAll(); 
+                                // We rely on REPLACE strategy to update existing ones.
                                 obstacleDao.insertAll(response.body());
                             });
                         }

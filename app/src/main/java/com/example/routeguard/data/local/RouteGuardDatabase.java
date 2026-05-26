@@ -7,10 +7,11 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.example.routeguard.data.model.Obstacle;
+import com.example.routeguard.data.model.ErrorLog;
 
 @Database(
-        entities = { Obstacle.class },
-        version = 1,
+        entities = { Obstacle.class, ErrorLog.class },
+        version = 3,
         exportSchema = false
 )
 public abstract class RouteGuardDatabase extends RoomDatabase {
@@ -20,6 +21,7 @@ public abstract class RouteGuardDatabase extends RoomDatabase {
 
     // Room generates this automatically from ObstacleDao
     public abstract ObstacleDao obstacleDao();
+    public abstract ErrorDao errorDao();
 
     // Singleton — only one database instance ever created
     public static RouteGuardDatabase getInstance(Context context) {

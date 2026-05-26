@@ -18,6 +18,9 @@ import com.example.routeguard.ui.navigate.NavigateFragment;
 import com.example.routeguard.ui.settings.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import android.content.Intent;
+import com.example.routeguard.service.ProximityAlertService;
+import android.os.Build;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,12 +31,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-//        // If not logged in, go to login screen first
-//        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-//            startActivity(new Intent(this, LoginActivity.class));
-//            finish();
-//            return;
-//        }
+        // If not logged in, go to login screen first
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
 
         setContentView(R.layout.activity_main);
 
@@ -69,20 +72,36 @@ public class MainActivity extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(R.id.nav_map);
         }
 
-        checkLocationPermission();
+        checkPermissions();
+        startProximityService();
     }
 
-    private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+    private void startProximityService() {
+        Intent serviceIntent = new Intent(this, ProximityAlertService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
 
-            ActivityCompat.requestPermissions(this,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    LOCATION_PERMISSION_CODE);
+    private void checkPermissions() {
+        String[] permissions = {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.CAMERA
+        };
+
+        boolean allGranted = true;
+        for (String p : permissions) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
+                allGranted = false;
+                break;
+            }
+        }
+
+        if (!allGranted) {
+            ActivityCompat.requestPermissions(this, permissions, LOCATION_PERMISSION_CODE);
         }
     }
 
