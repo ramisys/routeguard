@@ -43,4 +43,7 @@ public interface ApiService {
 
     @POST("api/obstacles/{id}/comments")
     Call<com.example.routeguard.data.model.Comment> postComment(@Path("id") String obstacleId, @Body com.example.routeguard.data.model.Comment comment);
+
+    @GET("api/media/sign")
+    Call<SignatureResponse> getUploadSignature();
 }

@@ -25,7 +25,11 @@ public class RetrofitClient {
 
     private RetrofitClient() {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+        if (BuildConfig.DEBUG) {
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+        } else {
+            logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
+        }
 
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(logging)

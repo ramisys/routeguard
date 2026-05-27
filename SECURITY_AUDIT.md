@@ -47,7 +47,17 @@ This document outlines the security vulnerabilities identified in the RouteGuard
 - Configured `RetrofitClient` to reduce logging level in release builds.
 - Enabled ProGuard/R8 obfuscation in `build.gradle.kts`.
 
-## 5. Production Recommendations
+## 5. Media Security (Cloudinary)
+### Vulnerability: Hardcoded Upload Presets & Unsigned Uploads
+**Observation:** The app used hardcoded `upload_preset` and allowed `unsigned` uploads.
+**Risk:** Anyone with your `cloud_name` and `upload_preset` could upload any image to your Cloudinary storage, potentially leading to storage exhaustion or hosting of malicious content.
+**Improvement:**
+- Switched to **Signed Uploads**.
+- Implemented a backend signing service (`/api/media/sign`) that generates a signature using the `CLOUDINARY_API_SECRET`.
+- Removed `api_secret` and sensitive presets from the Android app.
+- Moved `cloud_name` to `BuildConfig`.
+
+## 6. Production Recommendations
 - **HTTPS:** Always use TLS/SSL for communication between the app and backend.
 - **Nginx:** Use Nginx as a reverse proxy to handle SSL termination and further rate limiting.
 - **Logging:** Move away from local Room logging for errors and use a production-grade service like Sentry or Firebase Crashlytics.

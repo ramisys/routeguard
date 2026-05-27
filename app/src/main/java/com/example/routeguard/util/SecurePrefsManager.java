@@ -29,7 +29,7 @@ public class SecurePrefsManager {
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             );
         } catch (GeneralSecurityException | IOException e) {
-            AppLogger.e("SecurePrefsManager", "Error initializing EncryptedSharedPreferences: " + e.getMessage());
+            AppLogger.e("SecurePrefsManager", "Error initializing EncryptedSharedPreferences", e);
         }
     }
 
