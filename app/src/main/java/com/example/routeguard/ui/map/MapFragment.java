@@ -65,6 +65,15 @@ public class MapFragment extends Fragment {
         if (mainBottomNav != null) mainBottomNav.setVisibility(View.VISIBLE);
         
         view.findViewById(R.id.ivProfile).setOnClickListener(this::showProfileMenu);
+        
+        view.findViewById(R.id.fabMyLocation).setOnClickListener(v -> {
+            if (locationOverlay != null && locationOverlay.getMyLocation() != null) {
+                mapView.getController().animateTo(locationOverlay.getMyLocation());
+                mapView.getController().setZoom(17.0);
+            } else {
+                android.widget.Toast.makeText(getContext(), "Finding location...", android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
 
         initMap();
         initViewModel();

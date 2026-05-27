@@ -140,6 +140,15 @@ public class NavigateFragment extends Fragment {
             }
         });
 
+        view.findViewById(R.id.fabMyLocation).setOnClickListener(v -> {
+            if (locationOverlay != null && locationOverlay.getMyLocation() != null) {
+                mapView.getController().animateTo(locationOverlay.getMyLocation());
+                mapView.getController().setZoom(17.0);
+            } else {
+                Toast.makeText(getContext(), "Finding location...", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         return view;
     }
 
