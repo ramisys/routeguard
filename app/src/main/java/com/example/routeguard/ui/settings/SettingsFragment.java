@@ -22,11 +22,24 @@ public class SettingsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
+        View mainBottomNav = requireActivity().findViewById(R.id.bottomNavigation);
+        if (mainBottomNav != null) mainBottomNav.setVisibility(View.GONE);
+
+        view.findViewById(R.id.btnBack).setOnClickListener(v -> getParentFragmentManager().popBackStack());
+
         view.findViewById(R.id.btnSignOut).setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
             Intent intent = new Intent(requireActivity(), LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
+        });
+
+        view.findViewById(R.id.btnViewLogs).setOnClickListener(v -> {
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, new ErrorLogFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         return view;

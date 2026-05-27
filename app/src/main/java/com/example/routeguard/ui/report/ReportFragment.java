@@ -43,6 +43,20 @@ public class ReportFragment extends Fragment {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         getCurrentLocation();
 
+        View mainBottomNav = requireActivity().findViewById(R.id.bottomNavigation);
+        if (mainBottomNav != null) mainBottomNav.setVisibility(View.GONE);
+
+        view.findViewById(R.id.btnBack).setOnClickListener(v -> {
+            if (getActivity() instanceof com.example.routeguard.MainActivity) {
+                com.google.android.material.bottomnavigation.BottomNavigationView nav = 
+                    getActivity().findViewById(R.id.bottomNavigation);
+                if (nav != null) {
+                    nav.setVisibility(View.VISIBLE);
+                    nav.setSelectedItemId(R.id.nav_map);
+                }
+            }
+        });
+
         View btnFlood        = view.findViewById(R.id.btnFlood);
         View btnConstruction = view.findViewById(R.id.btnConstruction);
         View btnAccident     = view.findViewById(R.id.btnAccident);

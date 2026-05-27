@@ -7,9 +7,12 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.location.Address;
+import android.location.Geocoder;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -18,6 +21,7 @@ import com.example.routeguard.R;
 public class ReportStep3Fragment extends Fragment {
 
     private ReportViewModel viewModel;
+    private View loadingOverlay;
 
     @Nullable
     @Override
@@ -33,7 +37,9 @@ public class ReportStep3Fragment extends Fragment {
 
         TextView tvSummaryType  = view.findViewById(R.id.tvSummaryType);
         TextView tvSummaryMedia = view.findViewById(R.id.tvSummaryMedia);
+        TextView tvLocation     = view.findViewById(R.id.tvLocation);
         EditText etDescription  = view.findViewById(R.id.etDescription);
+        loadingOverlay          = view.findViewById(R.id.loadingOverlay);
 
         // Populate summary from ViewModel
         tvSummaryType.setText(viewModel.selectedType.getValue() != null
@@ -41,14 +47,22 @@ public class ReportStep3Fragment extends Fragment {
         tvSummaryMedia.setText(viewModel.mediaUri.getValue() != null
                 ? "Photo attached" : "No media");
 
+        // Display exact location address
+        if (viewModel.latitude.getValue() != null && viewModel.longitude.getValue() != null) {
+            updateLocationText(tvLocation, viewModel.latitude.getValue(), viewModel.longitude.getValue());
+        }
+
+        // Observe loading state
+        viewModel.isSubmitting.observe(getViewLifecycleOwner(), isSubmitting -> {
+            if (isSubmitting != null) {
+                loadingOverlay.setVisibility(isSubmitting ? View.VISIBLE : View.GONE);
+            }
+        });
+
         // Observe submission result
         viewModel.submitSuccess.observe(getViewLifecycleOwner(), success -> {
             if (success != null && success) {
-                requireActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer,
-                                new ReportSuccessFragment())
-                        .commit();
+                showSuccessDialog();
             }
         });
 
@@ -75,5 +89,36 @@ public class ReportStep3Fragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void showSuccessDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Report Submitted")
+                .setMessage("Your hazard report has been successfully uploaded and is now visible to other users on the map.")
+                .setPositiveButton("Finish", (dialog, which) -> {
+                    // Navigate to Success Fragment or clear stack
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragmentContainer, new ReportSuccessFragment())
+                            .commit();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void updateLocationText(TextView textView, double lat, double lon) {
+        Geocoder geocoder = new Geocoder(requireContext(), java.util.Locale.getDefault());
+        try {
+            java.util.List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                String addressStr = address.getAddressLine(0);
+                textView.setText(addressStr);
+            } else {
+                textView.setText(String.format(java.util.Locale.getDefault(), "Lat: %.4f, Lon: %.4f", lat, lon));
+            }
+        } catch (java.io.IOException e) {
+            textView.setText(String.format(java.util.Locale.getDefault(), "Lat: %.4f, Lon: %.4f", lat, lon));
+        }
     }
 }

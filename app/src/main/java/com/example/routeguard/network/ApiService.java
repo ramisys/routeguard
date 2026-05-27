@@ -20,7 +20,7 @@ public interface ApiService {
             @Query("radius") int radiusMeters
     );
 
-    @POST("api/reports")
+    @POST("api/obstacles")
     Call<Obstacle> submitReport(@Body Obstacle report);
 
     @POST("api/users/fcm-token")
@@ -28,4 +28,19 @@ public interface ApiService {
 
     @POST("api/obstacles/{id}/confirm")
     Call<Void> confirmObstacle(@Path("id") String obstacleId);
+
+    @POST("api/obstacles/{id}/clear")
+    Call<Void> clearObstacle(@Path("id") String obstacleId);
+
+    @GET("api/users/profile")
+    Call<com.example.routeguard.data.model.User> getUserProfile();
+
+    @retrofit2.http.PATCH("api/users/profile")
+    Call<com.example.routeguard.data.model.User> updateUserProfile(@Body com.example.routeguard.data.model.User user);
+
+    @GET("api/obstacles/{id}/comments")
+    Call<List<com.example.routeguard.data.model.Comment>> getComments(@Path("id") String obstacleId);
+
+    @POST("api/obstacles/{id}/comments")
+    Call<com.example.routeguard.data.model.Comment> postComment(@Path("id") String obstacleId, @Body com.example.routeguard.data.model.Comment comment);
 }

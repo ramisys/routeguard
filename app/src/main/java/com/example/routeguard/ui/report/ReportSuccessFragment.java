@@ -27,6 +27,17 @@ public class ReportSuccessFragment extends Fragment {
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (!isAdded()) return;
+            
+            if (getActivity() instanceof com.example.routeguard.MainActivity) {
+                com.google.android.material.bottomnavigation.BottomNavigationView nav = 
+                    getActivity().findViewById(R.id.bottomNavigation);
+                if (nav != null) {
+                    nav.setVisibility(View.VISIBLE);
+                    nav.setSelectedItemId(R.id.nav_map);
+                    return;
+                }
+            }
+
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragmentContainer, new MapFragment())

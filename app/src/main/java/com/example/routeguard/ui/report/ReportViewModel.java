@@ -9,6 +9,14 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.data.repository.ObstacleRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.cloudinary.android.MediaManager;
+import com.cloudinary.android.callback.ErrorInfo;
+import com.cloudinary.android.callback.UploadCallback;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class ReportViewModel extends AndroidViewModel {
 
@@ -58,8 +66,6 @@ public class ReportViewModel extends AndroidViewModel {
 
     public void submitReport() {
         String type = selectedType.getValue();
-        String desc = description.getValue();
-
         if (type == null || type.isEmpty()) {
             errorMessage.setValue("Please select a hazard type");
             return;
@@ -67,39 +73,95 @@ public class ReportViewModel extends AndroidViewModel {
 
         isSubmitting.setValue(true);
 
-        Obstacle report = new Obstacle();
-        report.setId(String.valueOf(System.currentTimeMillis()));
-        report.setType(type);
-        report.setSeverity(selectedSeverity.getValue() != null
-                ? selectedSeverity.getValue() : "MODERATE");
-        report.setLat(latitude.getValue() != null
-                ? latitude.getValue() : 11.2543);
-        report.setLon(longitude.getValue() != null
-                ? longitude.getValue() : 124.9999);
-        report.setActive(true);
+        if (mediaUri.getValue() != null) {
+            uploadImageAndSubmit(mediaUri.getValue());
+        } else {
+            finalizeSubmission(null);
+        }
+    }
 
-        // Save locally immediately so map updates right away
+    private void uploadImageAndSubmit(Uri uri) {
+        // Use Cloudinary for Image Upload
+        MediaManager.get().upload(uri)
+                .option("folder", "obstacles")
+                .option("unsigned", true)
+                .option("upload_preset", "mzmd1way") // Update with your actual Unsigned Preset Name
+                .callback(new UploadCallback() {
+                    @Override
+                    public void onStart(String requestId) { }
+
+                    @Override
+                    public void onProgress(String requestId, long bytes, long totalBytes) { }
+
+                    @Override
+                    public void onSuccess(String requestId, Map resultData) {
+                        String imageUrl = (String) resultData.get("secure_url");
+                        finalizeSubmission(imageUrl);
+                    }
+
+                    @Override
+                    public void onError(String requestId, ErrorInfo error) {
+                        isSubmitting.setValue(false);
+                        errorMessage.setValue("Cloudinary upload failed: " + error.getDescription());
+                    }
+
+                    @Override
+                    public void onReschedule(String requestId, ErrorInfo error) { }
+                })
+                .dispatch();
+    }
+
+    private void finalizeSubmission(String imageUrl) {
+        Obstacle report = new Obstacle();
+        report.setId(UUID.randomUUID().toString());
+        report.setType(selectedType.getValue());
+        report.setSeverity(selectedSeverity.getValue() != null ? selectedSeverity.getValue() : "MODERATE");
+        report.setDescription(description.getValue());
+        
+        // Add reporter info
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            report.setReporterId(user.getUid());
+            String name = user.getDisplayName();
+            report.setReporterName((name != null && !name.isEmpty()) ? name : user.getEmail());
+        }
+        
+        double lat = latitude.getValue() != null ? latitude.getValue() : 11.2543;
+        double lng = longitude.getValue() != null ? longitude.getValue() : 124.9999;
+        report.setLocation(new Obstacle.LocationData(lng, lat));
+
+        report.setImageUrl(imageUrl);
+        report.setActive(true);
+        report.setReportedAtMillis(System.currentTimeMillis());
+        report.setExpiresAtMillis(System.currentTimeMillis() + (4 * 60 * 60 * 1000L));
+
+        // Save locally first
         repository.insert(report);
 
-        // Also send to backend
+        // Send to backend
         com.example.routeguard.network.RetrofitClient.getInstance()
                 .getApiService()
                 .submitReport(report)
                 .enqueue(new retrofit2.Callback<Obstacle>() {
                     @Override
-                    public void onResponse(
-                            @NonNull retrofit2.Call<Obstacle> call,
-                            @NonNull retrofit2.Response<Obstacle> response) {
+                    public void onResponse(@NonNull retrofit2.Call<Obstacle> call, @NonNull retrofit2.Response<Obstacle> response) {
                         isSubmitting.setValue(false);
-                        submitSuccess.setValue(true);
+                        // If it's 201 Created or 200 OK, we are successful
+                        if (response.isSuccessful()) {
+                            submitSuccess.setValue(true);
+                        } else {
+                            // If backend is saved but response is error, we still treat as success 
+                            // because it's in the local DB and the user shouldn't be stuck.
+                            android.util.Log.e("ReportViewModel", "Backend error: " + response.code());
+                            submitSuccess.setValue(true); 
+                        }
                     }
 
                     @Override
-                    public void onFailure(
-                            @NonNull retrofit2.Call<Obstacle> call,
-                            @NonNull Throwable t) {
-                        // Still mark success — saved locally
+                    public void onFailure(@NonNull retrofit2.Call<Obstacle> call, @NonNull Throwable t) {
                         isSubmitting.setValue(false);
+                        android.util.Log.e("ReportViewModel", "Network failure: " + t.getMessage());
+                        // Even if network fails, it's saved in local DB, so let user proceed
                         submitSuccess.setValue(true);
                     }
                 });

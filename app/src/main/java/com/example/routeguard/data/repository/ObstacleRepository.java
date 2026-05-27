@@ -58,18 +58,34 @@ public class ObstacleRepository {
                     public void onResponse(Call<List<Obstacle>> call,
                                            Response<List<Obstacle>> response) {
                         if (response.isSuccessful() && response.body() != null) {
+                            List<Obstacle> obstacles = response.body();
+                            android.util.Log.d("ObstacleRepository", "Fetched " + obstacles.size() + " obstacles from server");
+                            for (Obstacle o : obstacles) {
+                                o.syncCoordinates();
+                                // Ensure they are active if they come from the 'nearby' endpoint
+                                if (!o.isActive()) {
+                                    android.util.Log.w("ObstacleRepository", "Obstacle " + o.getId() + " fetched but isActive=false. Forcing true.");
+                                    o.setActive(true);
+                                }
+                            }
                             // Save to local DB on background thread
                             executor.execute(() -> {
-                                obstacleDao.deleteAll();
-                                obstacleDao.insertAll(response.body());
+                                try {
+                                    obstacleDao.insertAll(obstacles);
+                                    android.util.Log.d("ObstacleRepository", "Successfully cached " + obstacles.size() + " obstacles to DB");
+                                } catch (Exception e) {
+                                    android.util.Log.e("ObstacleRepository", "Failed to cache obstacles: " + e.getMessage());
+                                }
                             });
+                        } else {
+                            android.util.Log.e("ObstacleRepository", "Fetch failed: " + response.code());
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<Obstacle>> call,
                                           Throwable t) {
-                        // Network failed — local DB data still shows
+                        android.util.Log.e("ObstacleRepository", "Network failure fetching obstacles: " + t.getMessage());
                         t.printStackTrace();
                     }
                 });
@@ -78,6 +94,7 @@ public class ObstacleRepository {
     // --- Local DB writes (must run on background thread) ---
 
     public void insert(Obstacle obstacle) {
+        obstacle.syncCoordinates();
         executor.execute(() -> obstacleDao.insert(obstacle));
     }
 

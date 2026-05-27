@@ -26,6 +26,12 @@ public interface ObstacleDao {
     @Query("SELECT * FROM obstacles WHERE isActive = 1")
     LiveData<List<Obstacle>> getAllActiveObstacles();
 
+    // Get obstacles near a location (within bounding box) - Synchronous for Background Worker/Service
+    @Query("SELECT * FROM obstacles WHERE lat BETWEEN :minLat AND :maxLat AND lon BETWEEN :minLon AND :maxLon AND isActive = 1")
+    List<Obstacle> getNearbyObstaclesSync(
+            double minLat, double maxLat,
+            double minLon, double maxLon);
+
     // Get obstacles near a location (within bounding box)
     @Query("SELECT * FROM obstacles WHERE lat BETWEEN :minLat AND :maxLat AND lon BETWEEN :minLon AND :maxLon AND isActive = 1")
     LiveData<List<Obstacle>> getNearbyObstacles(
@@ -49,6 +55,10 @@ public interface ObstacleDao {
     // Mark obstacle as inactive instead of deleting
     @Query("UPDATE obstacles SET isActive = 0 WHERE id = :id")
     void deactivateObstacle(String id);
+
+    // Auto-cleanup for expired obstacles
+    @Query("UPDATE obstacles SET isActive = 0 WHERE expiresAt < :currentTime AND isActive = 1")
+    void deactivateExpiredObstacles(long currentTime);
 
     // Clear all obstacles (used when refreshing from network)
     @Query("DELETE FROM obstacles")

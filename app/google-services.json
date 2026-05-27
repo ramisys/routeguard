@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "853762957023",
-    "project_id": "routeguard-17dc3",
-    "storage_bucket": "routeguard-17dc3.firebasestorage.app"
+    "project_number": "454815575004",
+    "project_id": "routeguard-7a5d5",
+    "storage_bucket": "routeguard-7a5d5.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:853762957023:android:b2a1f9ea6909b08096536a",
+        "mobilesdk_app_id": "1:454815575004:android:dab4a690f3e6bbd8d2bd19",
         "android_client_info": {
-          "package_name": "com.example.routeguard"
+          "package_name": "com.routeguard.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBa7Kg_XgdqA6h3_9_JpWXrFzhGqhYy2Bw"
+          "current_key": "AIzaSyCPUKFGSDHiy3JsshqpBHbtZg1wZCQQQLQ"
         }
       ],
       "services": {
