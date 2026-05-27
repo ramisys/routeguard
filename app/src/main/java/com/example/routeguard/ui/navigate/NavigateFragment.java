@@ -10,8 +10,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -41,9 +44,13 @@ public class NavigateFragment extends Fragment {
 
     private MapView mapView;
     private MyLocationNewOverlay locationOverlay;
-    private EditText etDestination;
+    private AutoCompleteTextView etDestination;
     private ProgressBar pbSearch;
+    private ImageView btnClearSearch;
+    private ImageView btnBack;
+    private ImageView ivSearchIcon;
     private View routeInfoCard;
+    private View searchActionsBar;
     private TextView tvRouteSummary;
     private TextView tvObstacleInfo;
     private ImageView btnGo;
@@ -68,7 +75,11 @@ public class NavigateFragment extends Fragment {
         mapView = view.findViewById(R.id.mapViewNav);
         etDestination = view.findViewById(R.id.etDestination);
         pbSearch = view.findViewById(R.id.pbSearch);
+        btnClearSearch = view.findViewById(R.id.btnClearSearch);
+        btnBack = view.findViewById(R.id.btnBack);
+        ivSearchIcon = view.findViewById(R.id.ivSearchIcon);
         routeInfoCard = view.findViewById(R.id.routeInfoCard);
+        searchActionsBar = view.findViewById(R.id.searchActionsBar);
         tvRouteSummary = view.findViewById(R.id.tvRouteSummary);
         tvObstacleInfo = view.findViewById(R.id.tvObstacleInfo);
         btnGo = view.findViewById(R.id.btnGo);
@@ -84,6 +95,42 @@ public class NavigateFragment extends Fragment {
         });
 
         btnGo.setOnClickListener(v -> performSearch(etDestination.getText().toString()));
+
+        btnClearSearch.setOnClickListener(v -> etDestination.setText(""));
+
+        btnBack.setOnClickListener(v -> {
+            etDestination.clearFocus();
+            hideKeyboard();
+        });
+
+        searchActionsBar.setOnClickListener(v -> {
+            etDestination.clearFocus();
+            hideKeyboard();
+        });
+
+        etDestination.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                btnBack.setVisibility(View.VISIBLE);
+                ivSearchIcon.setVisibility(View.GONE);
+                searchActionsBar.setVisibility(View.VISIBLE);
+                if (!etDestination.getText().toString().isEmpty()) btnClearSearch.setVisibility(View.VISIBLE);
+            } else {
+                btnBack.setVisibility(View.GONE);
+                ivSearchIcon.setVisibility(View.VISIBLE);
+                btnClearSearch.setVisibility(View.GONE);
+                searchActionsBar.setVisibility(View.GONE);
+            }
+        });
+
+        etDestination.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                btnClearSearch.setVisibility(!s.toString().isEmpty() && etDestination.hasFocus() ? View.VISIBLE : View.GONE);
+            }
+            @Override public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        setupAutocomplete();
 
         view.findViewById(R.id.btnStartNavigation).setOnClickListener(v -> {
             if (!isNavigating) {
@@ -158,6 +205,142 @@ public class NavigateFragment extends Fragment {
                 });
             }
         }).start();
+    }
+
+    private void hideKeyboard() {
+        android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) 
+                requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(etDestination.getWindowToken(), 0);
+    }
+
+    private void setupAutocomplete() {
+        PlaceAdapter adapter = new PlaceAdapter(requireContext(), R.layout.item_place_suggestion);
+        etDestination.setAdapter(adapter);
+        
+        // Ensure dropdown is styled for dark mode
+        etDestination.setDropDownBackgroundResource(R.color.bg_card);
+        
+        // Make dropdown wider and longer
+        etDestination.setDropDownWidth(android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+        // Set height to a significant portion of the screen (e.g., 60% of height)
+        android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        etDestination.setDropDownHeight((int) (metrics.heightPixels * 0.7));
+
+        etDestination.setOnItemClickListener((parent, view, position, id) -> {
+            Address selected = adapter.getItem(position);
+            if (selected != null) {
+                GeoPoint target = new GeoPoint(selected.getLatitude(), selected.getLongitude());
+                String name = selected.getFeatureName();
+                if (name == null) name = selected.getAddressLine(0);
+                showDestinationOnMap(target, name);
+            }
+        });
+    }
+
+    private static class PlaceAdapter extends ArrayAdapter<Address> {
+        private final Geocoder geocoder;
+        private List<Address> results = new ArrayList<>();
+        private String currentQuery = "";
+
+        public PlaceAdapter(@NonNull android.content.Context context, int resource) {
+            super(context, resource);
+            geocoder = new Geocoder(context, Locale.getDefault());
+        }
+
+        @Override
+        public int getCount() {
+            return results.size();
+        }
+
+        @Nullable
+        @Override
+        public Address getItem(int position) {
+            return results.get(position);
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_place_suggestion, parent, false);
+            }
+
+            Address address = getItem(position);
+            TextView tvTitle = convertView.findViewById(R.id.tvTitle);
+            TextView tvSubtitle = convertView.findViewById(R.id.tvSubtitle);
+
+            if (address != null) {
+                String fullLine = address.getAddressLine(0);
+                String[] parts = fullLine.split(",", 2);
+                
+                String title = parts[0].trim();
+                String subtitle = parts.length > 1 ? parts[1].trim() : "";
+
+                // Highlight matching text in title
+                android.text.SpannableString spannableTitle = new android.text.SpannableString(title);
+                if (!currentQuery.isEmpty()) {
+                    int startIdx = title.toLowerCase().indexOf(currentQuery.toLowerCase());
+                    if (startIdx != -1) {
+                        int endIdx = startIdx + currentQuery.length();
+                        spannableTitle.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 
+                                startIdx, Math.min(endIdx, title.length()), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                }
+                tvTitle.setText(spannableTitle);
+
+                if (!subtitle.isEmpty()) {
+                    tvSubtitle.setText(subtitle);
+                    tvSubtitle.setVisibility(View.VISIBLE);
+                } else {
+                    tvSubtitle.setVisibility(View.GONE);
+                }
+            }
+            return convertView;
+        }
+
+        @NonNull
+        @Override
+        public Filter getFilter() {
+            return new Filter() {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    FilterResults filterResults = new FilterResults();
+                    if (constraint != null && constraint.length() >= 2) {
+                        currentQuery = constraint.toString();
+                        try {
+                            List<Address> addresses = geocoder.getFromLocationName(currentQuery, 10);
+                            if (addresses != null) {
+                                filterResults.values = addresses;
+                                filterResults.count = addresses.size();
+                            }
+                        } catch (IOException e) {
+                            android.util.Log.e("PlaceAdapter", "Geocoder error", e);
+                        }
+                    }
+                    return filterResults;
+                }
+
+                @Override
+                @SuppressWarnings("unchecked")
+                protected void publishResults(CharSequence constraint, FilterResults filterResults) {
+                    if (filterResults != null && filterResults.count > 0) {
+                        results = (List<Address>) filterResults.values;
+                        notifyDataSetChanged();
+                    } else {
+                        notifyDataSetInvalidated();
+                    }
+                }
+
+                @Override
+                public CharSequence convertResultToString(Object resultValue) {
+                    if (resultValue instanceof Address) {
+                        return ((Address) resultValue).getAddressLine(0);
+                    }
+                    return super.convertResultToString(resultValue);
+                }
+            };
+        }
     }
 
     private void showDestinationOnMap(GeoPoint target, String name) {
@@ -277,7 +460,7 @@ public class NavigateFragment extends Fragment {
             hm.setPosition(new GeoPoint(h.coordinates.get(1), h.coordinates.get(0)));
             hm.setTitle(h.type + " (" + h.severity + ")");
             hm.setSubDescription("Hazard on or near your route");
-            hm.setIcon(getResources().getDrawable(R.drawable.ic_warning, null));
+            hm.setIcon(androidx.core.content.res.ResourcesCompat.getDrawable(getResources(), R.drawable.ic_warning, null));
             mapView.getOverlays().add(hm);
         }
 
