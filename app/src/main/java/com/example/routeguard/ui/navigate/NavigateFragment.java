@@ -47,6 +47,9 @@ public class NavigateFragment extends Fragment {
     private TextView tvRouteSummary;
     private TextView tvObstacleInfo;
     private ImageView btnGo;
+    private boolean isNavigating = false;
+    private final Handler rerouteHandler = new Handler(Looper.getMainLooper());
+    private GeoPoint lastDestination;
 
     @Nullable
     @Override
@@ -83,10 +86,38 @@ public class NavigateFragment extends Fragment {
         btnGo.setOnClickListener(v -> performSearch(etDestination.getText().toString()));
 
         view.findViewById(R.id.btnStartNavigation).setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Navigation starting...", Toast.LENGTH_SHORT).show();
+            if (!isNavigating) {
+                startNavigation();
+            } else {
+                stopNavigation();
+            }
         });
 
         return view;
+    }
+
+    private void startNavigation() {
+        isNavigating = true;
+        Toast.makeText(requireContext(), "Navigation started", Toast.LENGTH_SHORT).show();
+        startRerouteCheck();
+    }
+
+    private void stopNavigation() {
+        isNavigating = false;
+        rerouteHandler.removeCallbacksAndMessages(null);
+        Toast.makeText(requireContext(), "Navigation stopped", Toast.LENGTH_SHORT).show();
+    }
+
+    private void startRerouteCheck() {
+        rerouteHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (isNavigating && lastDestination != null) {
+                    calculateSafeRoute(lastDestination);
+                    rerouteHandler.postDelayed(this, 30000); // Check every 30 seconds
+                }
+            }
+        }, 30000);
     }
 
     private void initMap() {
@@ -130,6 +161,7 @@ public class NavigateFragment extends Fragment {
     }
 
     private void showDestinationOnMap(GeoPoint target, String name) {
+        lastDestination = target;
         mapView.getOverlays().removeIf(overlay -> overlay instanceof Marker && !(overlay instanceof MyLocationNewOverlay));
         
         Marker marker = new Marker(mapView);
@@ -140,97 +172,125 @@ public class NavigateFragment extends Fragment {
         
         mapView.getController().animateTo(target);
         
-        calculateMockRoute(target);
+        calculateSafeRoute(target);
     }
 
-    private void calculateMockRoute(GeoPoint target) {
+    private void calculateSafeRoute(GeoPoint target) {
         GeoPoint start = locationOverlay.getMyLocation();
-        if (start == null) start = new GeoPoint(11.2543, 124.9999);
+        if (start == null) {
+            // Fallback to a default location if GPS not ready
+            start = new GeoPoint(11.2543, 124.9999);
+        }
 
-        String coords = start.getLongitude() + "," + start.getLatitude() + ";" +
-                       target.getLongitude() + "," + target.getLatitude();
+        String startStr = start.getLongitude() + "," + start.getLatitude();
+        String endStr = target.getLongitude() + "," + target.getLatitude();
+
+        pbSearch.setVisibility(View.VISIBLE);
 
         com.example.routeguard.network.RetrofitClient.getInstance()
-                .getRoutingService()
-                .getRoute(coords, "full", "polyline", false)
-                .enqueue(new retrofit2.Callback<com.example.routeguard.network.RoutingService.OsrmResponse>() {
+                .getApiService()
+                .getSafeRoutes(startStr, endStr)
+                .enqueue(new retrofit2.Callback<com.example.routeguard.network.NavigationResponse>() {
                     @Override
-                    public void onResponse(retrofit2.Call<com.example.routeguard.network.RoutingService.OsrmResponse> call,
-                                           retrofit2.Response<com.example.routeguard.network.RoutingService.OsrmResponse> response) {
+                    public void onResponse(retrofit2.Call<com.example.routeguard.network.NavigationResponse> call,
+                                           retrofit2.Response<com.example.routeguard.network.NavigationResponse> response) {
+                        pbSearch.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null && !response.body().routes.isEmpty()) {
-                            com.example.routeguard.network.RoutingService.Route route = response.body().routes.get(0);
-                            drawRoute(route.geometry);
-                            showRouteInfo(route);
+                            // Find the recommended route
+                            com.example.routeguard.network.NavigationResponse.SafeRoute recommended = null;
+                            for (com.example.routeguard.network.NavigationResponse.SafeRoute r : response.body().routes) {
+                                if (r.isRecommended) {
+                                    recommended = r;
+                                    break;
+                                }
+                            }
+                            if (recommended == null) recommended = response.body().routes.get(0);
+                            
+                            drawSafeRoute(recommended);
+                            showSafeRouteInfo(recommended);
+                        } else {
+                            Toast.makeText(requireContext(), "No safe routes found", Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
-                    public void onFailure(retrofit2.Call<com.example.routeguard.network.RoutingService.OsrmResponse> call, Throwable t) {
-                        Toast.makeText(requireContext(), "Routing failed", Toast.LENGTH_SHORT).show();
+                    public void onFailure(retrofit2.Call<com.example.routeguard.network.NavigationResponse> call, Throwable t) {
+                        pbSearch.setVisibility(View.GONE);
+                        Toast.makeText(requireContext(), "Navigation API error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
-    private void showRouteInfo(com.example.routeguard.network.RoutingService.Route route) {
+    private void showSafeRouteInfo(com.example.routeguard.network.NavigationResponse.SafeRoute route) {
         if (routeInfoCard != null) {
             routeInfoCard.setVisibility(View.VISIBLE);
             
-            // Format duration (seconds to minutes)
             int minutes = (int) (route.duration / 60);
             double distanceKm = route.distance / 1000.0;
             
-            tvRouteSummary.setText(String.format(Locale.getDefault(), 
-                    "Fastest route: %d mins (%.1f km)", minutes, distanceKm));
+            String summary = String.format(Locale.getDefault(), 
+                    "Safe Route: %d mins (%.1f km)\nSafety Score: %d%%", 
+                    minutes, distanceKm, route.safetyScore);
+            tvRouteSummary.setText(summary);
             
-            // In a real app, we'd calculate how many obstacles are avoided
-            tvObstacleInfo.setText("Route optimized to avoid nearby hazards");
+            if (route.hazards.isEmpty()) {
+                tvObstacleInfo.setText("No hazards detected on this route.");
+                tvObstacleInfo.setTextColor(getResources().getColor(android.R.color.holo_green_dark, null));
+            } else {
+                tvObstacleInfo.setText(String.format(Locale.getDefault(), 
+                        "Warning: %d hazards nearby. Extra caution advised.", route.hazards.size()));
+                tvObstacleInfo.setTextColor(getResources().getColor(android.R.color.holo_orange_dark, null));
+            }
         }
     }
 
-    private void drawRoute(String encodedPolyline) {
+    private void drawSafeRoute(com.example.routeguard.network.NavigationResponse.SafeRoute route) {
         Polyline polyline = new Polyline();
-        polyline.setPoints(decodePolyline(encodedPolyline));
-        polyline.setColor(getResources().getColor(R.color.accent_teal, null));
-        polyline.setWidth(12f);
+        List<GeoPoint> points = new ArrayList<>();
+        
+        for (List<Double> coord : route.geometry.coordinates) {
+            // GeoJSON is [lng, lat]
+            points.add(new GeoPoint(coord.get(1), coord.get(0)));
+        }
+        
+        polyline.setPoints(points);
+        
+        // Color based on safety score
+        int color;
+        if (route.safetyScore > 80) {
+            color = getResources().getColor(R.color.accent_teal, null); // Safe
+        } else if (route.safetyScore > 50) {
+            color = getResources().getColor(android.R.color.holo_orange_light, null); // Caution
+        } else {
+            color = getResources().getColor(android.R.color.holo_red_light, null); // Risky
+        }
+        
+        polyline.setColor(color);
+        polyline.setWidth(14f);
         
         mapView.getOverlays().removeIf(o -> o instanceof Polyline);
         mapView.getOverlays().add(polyline);
-        mapView.invalidate();
-    }
-
-    private List<GeoPoint> decodePolyline(String encoded) {
-        List<GeoPoint> poly = new ArrayList<>();
-        int index = 0, len = encoded.length();
-        int lat = 0, lng = 0;
-
-        while (index < len) {
-            int b, shift = 0, result = 0;
-            do {
-                b = encoded.charAt(index++) - 63;
-                result |= (b & 0x1f) << shift;
-                shift += 5;
-            } while (b >= 0x20);
-            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-            lat += dlat;
-
-            shift = 0;
-            result = 0;
-            do {
-                b = encoded.charAt(index++) - 63;
-                result |= (b & 0x1f) << shift;
-                shift += 5;
-            } while (b >= 0x20);
-            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-            lng += dlng;
-
-            poly.add(new GeoPoint(lat / 1E5, lng / 1E5));
+        
+        // Add hazard markers
+        for (com.example.routeguard.network.NavigationResponse.Hazard h : route.hazards) {
+            Marker hm = new Marker(mapView);
+            hm.setPosition(new GeoPoint(h.coordinates.get(1), h.coordinates.get(0)));
+            hm.setTitle(h.type + " (" + h.severity + ")");
+            hm.setSubDescription("Hazard on or near your route");
+            hm.setIcon(getResources().getDrawable(R.drawable.ic_warning, null));
+            mapView.getOverlays().add(hm);
         }
-        return poly;
+
+        mapView.invalidate();
     }
 
     @Override
     public void onResume() { super.onResume(); mapView.onResume(); }
 
     @Override
-    public void onPause() { super.onPause(); mapView.onPause(); }
+    public void onPause() { 
+        super.onPause(); 
+        mapView.onPause(); 
+        rerouteHandler.removeCallbacksAndMessages(null);
+    }
 }

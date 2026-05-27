@@ -46,4 +46,10 @@ public interface ApiService {
 
     @GET("api/media/sign")
     Call<SignatureResponse> getUploadSignature();
+
+    @GET("api/navigation/routes")
+    Call<NavigationResponse> getSafeRoutes(
+            @Query("start") String startCoords, // "lng,lat"
+            @Query("end") String endCoords      // "lng,lat"
+    );
 }

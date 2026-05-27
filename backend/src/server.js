@@ -65,10 +65,12 @@ app.get('/', (req, res) => {
 const obstacleRoutes = require('./routes/obstacleRoutes');
 const userRoutes = require('./routes/userRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
+const navigationRoutes = require('./routes/navigationRoutes');
 
 app.use('/api/obstacles', obstacleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/navigation', navigationRoutes);
 
 // 5. Global Error Handler
 app.use((err, req, res, next) => {
