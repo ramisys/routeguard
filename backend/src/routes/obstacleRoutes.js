@@ -60,7 +60,10 @@ router.get('/nearby',
 
     console.log(`Found ${obstacles.length} obstacles in range.`);
 
-    res.json(obstacles);
+    res.json({
+      success: true,
+      obstacles: obstacles
+    });
   } catch (err) {
     console.error('GET Nearby Error:', err.message);
     res.status(500).json({ message: err.message });
@@ -77,6 +80,7 @@ router.post('/',
   [
     body('type').notEmpty().trim().escape(),
     body('description').optional().trim().escape(),
+    body('roadName').optional().trim().escape(),
     body('location.coordinates').isArray({ min: 2, max: 2 }),
     body('location.coordinates.*').isFloat()
   ],

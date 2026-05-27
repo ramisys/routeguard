@@ -34,6 +34,7 @@ public class ReportViewModel extends AndroidViewModel {
     public final MutableLiveData<String> selectedType     = new MutableLiveData<>();
     public final MutableLiveData<String> selectedSeverity = new MutableLiveData<>();
     public final MutableLiveData<Uri>    mediaUri         = new MutableLiveData<>();
+    public final MutableLiveData<String> roadName         = new MutableLiveData<>();
     public final MutableLiveData<String> description      = new MutableLiveData<>();
     public final MutableLiveData<Double> latitude         = new MutableLiveData<>();
     public final MutableLiveData<Double> longitude        = new MutableLiveData<>();
@@ -61,6 +62,10 @@ public class ReportViewModel extends AndroidViewModel {
 
     public void setMediaUri(Uri uri) {
         mediaUri.setValue(uri);
+    }
+
+    public void setRoadName(String road) {
+        roadName.setValue(road);
     }
 
     public void setDescription(String desc) {
@@ -154,6 +159,7 @@ public class ReportViewModel extends AndroidViewModel {
         report.setId(UUID.randomUUID().toString());
         report.setType(selectedType.getValue());
         report.setSeverity(selectedSeverity.getValue() != null ? selectedSeverity.getValue() : "MODERATE");
+        report.setRoadName(roadName.getValue());
         report.setDescription(description.getValue());
         
         // Add reporter info
@@ -209,6 +215,7 @@ public class ReportViewModel extends AndroidViewModel {
         selectedType.setValue(null);
         selectedSeverity.setValue(null);
         mediaUri.setValue(null);
+        roadName.setValue(null);
         description.setValue(null);
         isSubmitting.setValue(false);
         submitSuccess.setValue(false);

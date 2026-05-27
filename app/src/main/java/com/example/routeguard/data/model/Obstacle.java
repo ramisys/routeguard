@@ -35,6 +35,9 @@ public class Obstacle {
     @SerializedName("imageUrl")
     private String imageUrl;
 
+    @SerializedName("roadName")
+    private String roadName;
+
     @SerializedName("description")
     private String description;
 
@@ -160,6 +163,9 @@ public class Obstacle {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
+    public String getRoadName() { return roadName; }
+    public void setRoadName(String roadName) { this.roadName = roadName; }
+
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
@@ -202,6 +208,9 @@ public class Obstacle {
         if (location != null) {
             this.latitude = location.getLat();
             this.longitude = location.getLon();
+            android.util.Log.d("Obstacle", "Synced coords for " + id + ": " + latitude + ", " + longitude);
+        } else {
+            android.util.Log.w("Obstacle", "Cannot sync coords for " + id + ": location is null");
         }
     }
 }

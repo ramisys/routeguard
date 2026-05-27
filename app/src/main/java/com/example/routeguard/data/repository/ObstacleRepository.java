@@ -8,6 +8,7 @@ import com.example.routeguard.data.local.ObstacleDao;
 import com.example.routeguard.data.local.RouteGuardDatabase;
 import com.example.routeguard.data.model.Obstacle;
 import com.example.routeguard.network.ApiService;
+import com.example.routeguard.network.NearbyObstaclesResponse;
 import com.example.routeguard.network.RetrofitClient;
 
 import java.util.List;
@@ -53,18 +54,30 @@ public class ObstacleRepository {
 
     public void fetchAndCacheObstacles(double lat, double lon) {
         apiService.getNearbyObstacles(lat, lon, 5000)
-                .enqueue(new Callback<List<Obstacle>>() {
+                .enqueue(new Callback<NearbyObstaclesResponse>() {
                     @Override
-                    public void onResponse(Call<List<Obstacle>> call,
-                                           Response<List<Obstacle>> response) {
+                    public void onResponse(Call<NearbyObstaclesResponse> call,
+                                           Response<NearbyObstaclesResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
-                            List<Obstacle> obstacles = response.body();
+                            NearbyObstaclesResponse body = response.body();
+                            android.util.Log.d("ObstacleRepository", "Response success: " + body.success);
+                            
+                            List<Obstacle> obstacles = body.obstacles;
+                            if (obstacles == null) {
+                                android.util.Log.w("ObstacleRepository", "Response successful but obstacles list is null");
+                                return;
+                            }
                             android.util.Log.d("ObstacleRepository", "Fetched " + obstacles.size() + " obstacles from server");
+                            
                             for (Obstacle o : obstacles) {
                                 o.syncCoordinates();
+                                // Debug log for first few obstacles
+                                if (obstacles.indexOf(o) < 3) {
+                                    android.util.Log.d("ObstacleRepository", "Obstacle " + o.getId() + " at " + o.getLat() + ", " + o.getLon());
+                                }
+                                
                                 // Ensure they are active if they come from the 'nearby' endpoint
                                 if (!o.isActive()) {
-                                    android.util.Log.w("ObstacleRepository", "Obstacle " + o.getId() + " fetched but isActive=false. Forcing true.");
                                     o.setActive(true);
                                 }
                             }
@@ -83,7 +96,7 @@ public class ObstacleRepository {
                     }
 
                     @Override
-                    public void onFailure(Call<List<Obstacle>> call,
+                    public void onFailure(Call<NearbyObstaclesResponse> call,
                                           Throwable t) {
                         android.util.Log.e("ObstacleRepository", "Network failure fetching obstacles: " + t.getMessage());
                         t.printStackTrace();

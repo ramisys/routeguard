@@ -14,7 +14,7 @@ import retrofit2.http.Query;
 public interface ApiService {
 
     @GET("api/obstacles/nearby")
-    Call<List<Obstacle>> getNearbyObstacles(
+    Call<NearbyObstaclesResponse> getNearbyObstacles(
             @Query("lat") double lat,
             @Query("lng") double lng,
             @Query("radius") int radiusMeters

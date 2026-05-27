@@ -44,15 +44,17 @@ public class MapViewModel extends AndroidViewModel {
     }
 
     public void refreshObstacles() {
-        isLoading.setValue(true);
         double[] loc = currentLocation.getValue();
         if (loc != null) {
+            isLoading.setValue(true);
             android.util.Log.d("MapViewModel", "Refreshing obstacles at: " + loc[0] + ", " + loc[1]);
             repository.fetchAndCacheObstacles(loc[0], loc[1]);
+            // Note: In a real app, you'd want a callback from the repository to set isLoading to false.
+            // For now, we'll just trigger the fetch.
+            isLoading.setValue(false); 
         } else {
             android.util.Log.w("MapViewModel", "Cannot refresh obstacles: currentLocation is null");
         }
-        isLoading.setValue(false);
     }
 
     public void deactivateObstacle(String id) {
