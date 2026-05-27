@@ -78,6 +78,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         checkPermissions();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         startProximityService();
     }
 
@@ -91,11 +96,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkPermissions() {
-        String[] permissions = {
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.CAMERA
-        };
+        java.util.List<String> permissions = new java.util.ArrayList<>();
+        permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        permissions.add(Manifest.permission.CAMERA);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
 
         boolean allGranted = true;
         for (String p : permissions) {
@@ -106,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!allGranted) {
-            ActivityCompat.requestPermissions(this, permissions, LOCATION_PERMISSION_CODE);
+            ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), LOCATION_PERMISSION_CODE);
         }
     }
 

@@ -14,7 +14,7 @@ import retrofit2.http.Query;
 public interface ApiService {
 
     @GET("api/obstacles/nearby")
-    Call<List<Obstacle>> getNearbyObstacles(
+    Call<NearbyObstaclesResponse> getNearbyObstacles(
             @Query("lat") double lat,
             @Query("lng") double lng,
             @Query("radius") int radiusMeters
@@ -43,4 +43,13 @@ public interface ApiService {
 
     @POST("api/obstacles/{id}/comments")
     Call<com.example.routeguard.data.model.Comment> postComment(@Path("id") String obstacleId, @Body com.example.routeguard.data.model.Comment comment);
+
+    @GET("api/media/sign")
+    Call<SignatureResponse> getUploadSignature();
+
+    @GET("api/navigation/routes")
+    Call<NavigationResponse> getSafeRoutes(
+            @Query("start") String startCoords, // "lng,lat"
+            @Query("end") String endCoords      // "lng,lat"
+    );
 }

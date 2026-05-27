@@ -15,8 +15,16 @@ import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
 
+import com.example.routeguard.network.RetrofitClient;
+import com.example.routeguard.network.SignatureResponse;
+import com.example.routeguard.util.AppLogger;
+
 import java.util.Map;
 import java.util.UUID;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ReportViewModel extends AndroidViewModel {
 
@@ -26,6 +34,7 @@ public class ReportViewModel extends AndroidViewModel {
     public final MutableLiveData<String> selectedType     = new MutableLiveData<>();
     public final MutableLiveData<String> selectedSeverity = new MutableLiveData<>();
     public final MutableLiveData<Uri>    mediaUri         = new MutableLiveData<>();
+    public final MutableLiveData<String> roadName         = new MutableLiveData<>();
     public final MutableLiveData<String> description      = new MutableLiveData<>();
     public final MutableLiveData<Double> latitude         = new MutableLiveData<>();
     public final MutableLiveData<Double> longitude        = new MutableLiveData<>();
@@ -55,6 +64,10 @@ public class ReportViewModel extends AndroidViewModel {
         mediaUri.setValue(uri);
     }
 
+    public void setRoadName(String road) {
+        roadName.setValue(road);
+    }
+
     public void setDescription(String desc) {
         description.setValue(desc);
     }
@@ -81,11 +94,40 @@ public class ReportViewModel extends AndroidViewModel {
     }
 
     private void uploadImageAndSubmit(Uri uri) {
-        // Use Cloudinary for Image Upload
+        // 1. Get signature from backend
+        RetrofitClient.getInstance().getApiService().getUploadSignature().enqueue(new Callback<SignatureResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<SignatureResponse> call, @NonNull Response<SignatureResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    SignatureResponse sig = response.body();
+                    performSignedUpload(uri, sig);
+                } else {
+                    isSubmitting.setValue(false);
+                    String errorDetail = "";
+                    if (response.errorBody() != null) {
+                        try {
+                            errorDetail = " - " + response.errorBody().string();
+                        } catch (Exception ignored) {}
+                    }
+                    errorMessage.setValue("Failed to get upload signature: " + response.code() + errorDetail);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<SignatureResponse> call, @NonNull Throwable t) {
+                isSubmitting.setValue(false);
+                errorMessage.setValue("Network error while fetching signature");
+            }
+        });
+    }
+
+    private void performSignedUpload(Uri uri, SignatureResponse sig) {
+        // Use Cloudinary for Signed Image Upload
         MediaManager.get().upload(uri)
                 .option("folder", "obstacles")
-                .option("unsigned", true)
-                .option("upload_preset", "mzmd1way") // Update with your actual Unsigned Preset Name
+                .option("signature", sig.signature)
+                .option("timestamp", sig.timestamp)
+                .option("api_key", sig.apiKey)
                 .callback(new UploadCallback() {
                     @Override
                     public void onStart(String requestId) { }
@@ -103,6 +145,7 @@ public class ReportViewModel extends AndroidViewModel {
                     public void onError(String requestId, ErrorInfo error) {
                         isSubmitting.setValue(false);
                         errorMessage.setValue("Cloudinary upload failed: " + error.getDescription());
+                        AppLogger.e("Cloudinary", "Upload error: " + error.getDescription(), null);
                     }
 
                     @Override
@@ -116,6 +159,7 @@ public class ReportViewModel extends AndroidViewModel {
         report.setId(UUID.randomUUID().toString());
         report.setType(selectedType.getValue());
         report.setSeverity(selectedSeverity.getValue() != null ? selectedSeverity.getValue() : "MODERATE");
+        report.setRoadName(roadName.getValue());
         report.setDescription(description.getValue());
         
         // Add reporter info
@@ -171,6 +215,7 @@ public class ReportViewModel extends AndroidViewModel {
         selectedType.setValue(null);
         selectedSeverity.setValue(null);
         mediaUri.setValue(null);
+        roadName.setValue(null);
         description.setValue(null);
         isSubmitting.setValue(false);
         submitSuccess.setValue(false);

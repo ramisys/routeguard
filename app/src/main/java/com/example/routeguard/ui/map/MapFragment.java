@@ -39,6 +39,10 @@ public class MapFragment extends Fragment {
     private MyLocationNewOverlay locationOverlay;
     private org.osmdroid.views.overlay.FolderOverlay hazardOverlay;
     private MapViewModel viewModel;
+    
+    // Debouncing for map refresh
+    private final android.os.Handler refreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable refreshRunnable;
 
     @Nullable
     @Override
@@ -61,6 +65,15 @@ public class MapFragment extends Fragment {
         if (mainBottomNav != null) mainBottomNav.setVisibility(View.VISIBLE);
         
         view.findViewById(R.id.ivProfile).setOnClickListener(this::showProfileMenu);
+        
+        view.findViewById(R.id.fabMyLocation).setOnClickListener(v -> {
+            if (locationOverlay != null && locationOverlay.getMyLocation() != null) {
+                mapView.getController().animateTo(locationOverlay.getMyLocation());
+                mapView.getController().setZoom(17.0);
+            } else {
+                android.widget.Toast.makeText(getContext(), "Finding location...", android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
 
         initMap();
         initViewModel();
@@ -105,8 +118,18 @@ public class MapFragment extends Fragment {
     private void updateViewModelLocation() {
         if (viewModel != null && mapView != null) {
             GeoPoint center = (GeoPoint) mapView.getMapCenter();
-            android.util.Log.d("MapFragment", "Map moved. New center: " + center.getLatitude() + ", " + center.getLongitude());
-            viewModel.updateUserLocation(center.getLatitude(), center.getLongitude());
+            
+            // Debounce: Cancel pending refresh and schedule a new one
+            if (refreshRunnable != null) {
+                refreshHandler.removeCallbacks(refreshRunnable);
+            }
+            
+            refreshRunnable = () -> {
+                android.util.Log.d("MapFragment", "Debounced refresh. New center: " + center.getLatitude() + ", " + center.getLongitude());
+                viewModel.updateUserLocation(center.getLatitude(), center.getLongitude());
+            };
+            
+            refreshHandler.postDelayed(refreshRunnable, 800); // Wait 800ms after last movement
         }
     }
 

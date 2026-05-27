@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services") version "4.4.4"
@@ -16,7 +18,19 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        buildConfigField("String", "BASE_URL", "\"http://192.168.1.59:3000/\"")
+        val properties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { stream ->
+                properties.load(stream)
+            }
+        }
+        
+        val baseUrl = properties.getProperty("BASE_URL") ?: "http://10.0.2.2:3000/"
+        val cloudinaryName = properties.getProperty("CLOUDINARY_CLOUD_NAME") ?: ""
+
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudinaryName\"")
     }
 
     buildFeatures {
@@ -25,7 +39,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -87,6 +102,9 @@ dependencies {
 
     // WorkManager
     implementation("androidx.work:work-runtime:2.9.0")
+
+    // Security
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:3.0.2")

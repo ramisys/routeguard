@@ -23,7 +23,7 @@ public class RouteGuardApp extends Application {
 
         // Initialize Cloudinary
         Map<String, String> config = new HashMap<>();
-        config.put("cloud_name", "ddu5mmcuv"); // Update with your actual Cloud Name
+        config.put("cloud_name", BuildConfig.CLOUDINARY_CLOUD_NAME);
         MediaManager.init(this, config);
 
         // Initialize logger with app context
